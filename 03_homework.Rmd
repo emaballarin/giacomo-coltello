@@ -1,0 +1,72 @@
+---
+title: "SMDS Homework - Block 3"
+author: "R. Corti, L. Taroni, J.A. Fernandez Santisteban and E. Ballarin  |  Group 'D'"
+date: "13th May 2020"
+output:
+  html_document:
+    theme: darkly
+    highlight: default
+    mathjax: default
+    self_contained: true
+    md_extensions: +autolink_bare_uris
+    toc: true
+    toc_collapsed: false
+    toc_float: true
+    toc_depth: 3
+    number_sections: false
+header-includes:
+- \usepackage{color}
+- \usepackage{graphicx}
+- \usepackage{grffile}
+institute: University of Trieste, SISSA, ICTP, University of Udine
+graphics: yes
+fontsize: 10pt
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.align = 'center', warning=FALSE, message=FALSE, fig.asp=0.625, dev='png', global.par = TRUE, dev.args=list(pointsize=10), fig.path = 'figs/')
+```
+
+```{r setup, include=FALSE}
+library(knitr)
+local({
+  hook_plot = knit_hooks$get('plot')
+  knit_hooks$set(plot = function(x, options) {
+    paste0('\n\n----\n\n', hook_plot(x, options))
+  })
+})
+```
+
+# Exercises from *LEC*
+
+## Exercise 1
+
+## Exercise 2
+
+### Text:
+Compute *bootstrap*-based confidence intervals for the $\mathsf{score}$ dataset using the $\mathsf{boot}$ package.
+
+### Solution:
+
+Hello!
+
+
+# Exercises from *LAB*
+
+## Exercise 1
+
+## Exercise 2
+
+## Exercise 3
+
+## Exercise 5
+
+## Exercise 6
+
+## Exercise 7
+
+## Exercise 8
+
+## Exercise 9
+
+## Exercise 10
