@@ -37,3 +37,17 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# Files for personal use
+worklog.md
+
+# Python stuff
+**/.ipynb_checkpoints/
+
+# KnitR output
+figs/
+03_homework.html
+
+# Utilities
+publish.sh
+knit.sh
