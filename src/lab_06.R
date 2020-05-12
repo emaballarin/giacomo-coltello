@@ -1,8 +1,14 @@
+library(ggplot2)
 library(rstan)
 library(bayesplot)
 
 # LOCAL SETTINGS #
-setwd("/home/emaballarin/DSSC/statmeth/HOMEWORK/giacomo-coltello/src/")
+
+# Make Stan go parallel!
+options(mc.cores = parallel::detectCores())
+
+# Avoid losing precious time
+rstan::rstan_options(auto_write = TRUE)
 
 # STAN PRELIMINARIES #
 
@@ -24,7 +30,7 @@ y <- rnorm(n,theta_sample, sqrt(sigma2))
 
 # MCMC run:
 data <- list(N = n, y = y, sigma = sqrt(sigma2), mu = mu, tau = sqrt(tau2))
-fit <- rstan::stan(file="normal.stan", data = data, chains = 4, iter=2000)
+fit <- rstan::stan(file="./src/normal.stan", data = data, chains = 4, iter=2000)
 
 # From exercise text:
 posterior <- as.array(fit)
@@ -34,7 +40,7 @@ posterior <- as.array(fit)
 # ACTUAL EXERCISE #
 
 bayesplot::color_scheme_set(scheme = "brightblue")
-bayesplot::bayesplot_theme_update(panel.background = element_rect(fill = "black"))
+bayesplot::bayesplot_theme_update(panel.background = ggplot2::element_rect(fill = "black"))
 
 bayesplot::mcmc_intervals(posterior,
                           pars = c("theta"))
