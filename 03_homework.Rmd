@@ -200,6 +200,82 @@ text(155,-7.5,"95% Deviance CI",col=2)
 
 ## Exercise 5
 
+### Text:
+
+In **sim** in the code avove you find the MCMC output which allows to approximate the posterior distribution of our parameter of interest with $S$ draws of $\theta$. Please, produce an histogram for these random draws $\theta^{(1)},...,\theta^{(S)}$, compute the empirical quantiles, and overlap the true posterior distribution.
+
+### Solution:
+
+In this model, as said in the lab, the analytical form of the posterior distribution is known. In order to compare the true posterior and the simulated posterior, It has been plotted an histogram with the simulated posterior distribution and a curve for the theoretical one. The histogram has been normalized. Additionally, it are shown the 25, 50 and 75 quantiles, both theoretical and simulated.
+
+```{r}
+#EXERCISE 5
+library(rstan)
+
+#true mean
+theta_sample <- 2
+#likelihood variance
+sigma2 <- 2
+#sample size
+n <- 10
+#prior mean
+mu <- 7
+#prior variance
+tau2 <- 2
+
+#generate some data
+set.seed(123)
+y <- rnorm(n,theta_sample, sqrt(sigma2))
+
+#posterior mean
+mu_star <- ((1/tau2)*mu+(n/sigma2)*mean(y))/( (1/tau2)+(n/sigma2))
+#posterior standard deviation
+sd_star <- sqrt(1/( (1/tau2)+(n/sigma2)))
+
+#launch Stan model
+data<- list(N=n, y=y, sigma =sqrt(sigma2), mu = mu, tau = sqrt(tau2))
+fit <- stan(file="./src/normal.stan", data = data, chains = 4, iter=2000);  ##<- ¡¡¡ CAMBIARE file="normal.stan" !!!
+
+#extract Stan output
+sim <- extract(fit);
+sample_theta <- sim[["theta"]]
+emp_q <- quantile(sample_theta, probs = c(0.25, 0.5, 0.75))
+th_q <- qnorm(p = c(0.25, 0.5, 0.75), mu_star, sd_star)
+
+#plot
+par(mfrow=c(1,1), pty ="m", oma=c(0,0,0,0))
+hist(sim[["theta"]], probability = TRUE, ylim=c(0,1.0), 
+     col="darkmagenta", border="white",
+     xlab=expression(theta), ylab="Probability", main="Theoretical and simulated dist. with quantiles")
+curve(dnorm(x, mu_star, sd_star), col="dodgerblue", lwd=2,
+      cex.lab=2, add=T) 
+abline(v=emp_q, col="maroon", lwd=2, lty=4)
+abline(v=th_q, col="dodgerblue", lwd=2, lty=4)
+text((emp_q[1]+th_q[1])/2, 1.0, "q25")
+text((emp_q[2]+th_q[2])/2, 1.0, "q50")
+text((emp_q[3]+th_q[3])/2, 1.0, "q75")
+legend(0.7, 1, c("Simulated", "Theoretical"), 
+       c("darkmagenta", "dodgerblue"), lwd=c(2,2), lty=c(4,4), cex=0.8)
+```
+
+As can be grafically observed the distributions are quite similar. Also the few quantiles shown in this plot. In a bit deeper diagnostic test, a qq-plot can be performed in order to verify the global behavior of the quantiles.
+```{r}
+#qqplot
+
+n <- 100
+p <- (1:n)/n
+
+q_theor <- qnorm(p = p, mu_star, sd_star)
+q_empir <- quantile(sample_theta, probs = p)
+
+par(mfrow=c(1,1), pty ="m", oma=c(0,0,0,0))
+plot(x=q_theor, y=q_empir, type="p", col="black", 
+     main = "Normal q-q plot", xlab="Theoretical quantiles", ylab="Empirical quantiles")
+segments(x0=0, y0=0, x1=5, y1=5, col="red") 
+```
+
+The fit to the theoretical line seems quite good. Also in the extremes where, usually, models tend to fail because of the absence of data.
+
 ## Exercise 6
 
 ### Text:
@@ -229,6 +305,141 @@ Quickly comment.
 XYZ
 
 ## Exercise 7
+
+### Text:
+
+Suppose you receive $n=15$ phone calls in a day, and you want to build a model to assess their average length. Your likelihood for each call length is $y_i \sim \mathrm{Poisson}(\lambda)$. Now, you have to choose the prior $\pi(\lambda)$. Please, tell which of these priors is adequate to describe the problem, and provide a short motivation for each of them:
+
+1. $\pi(\lambda)=\mathrm{Beta}(4, 2)$;
+2. $\pi(\lambda)=\mathrm{Normal}(1, 2)$;
+3. $\pi(\lambda)=\mathrm{Gamma}(4, 2)$;
+
+Now, compute your posterior as $\pi(\lambda|y) \propto L(\lambda;y)\pi(\lambda)$  for the selected prior. If your first choice was correct, you will be able to compute it analitically.
+
+### Solution:
+
+First of all, let's analyse the different proposed distributions. Let's use a plot to see in a clear way the main features of these distributions.
+
+```{r}
+par(mfrow=c(2,2), pty ="m", oma=c(0,0,0,0))
+curve(dbeta(x, 4, 2), col="dodgerblue", lwd=2, main="Beta distribution") # x compresa fra 0 e 1 BAD
+curve(dnorm(x, 1, 2), col="dodgerblue", lwd=2, xlim=c(-3,5), main="Normal distribution") # x con valori negativi BAD
+curve(dgamma(x, 4, 2), col="dodgerblue", lwd=2, xlim=c(0,5), main="Gamma distribution") # x con valori positivi e non necessariamente ristretti GOOD
+
+```
+
+It is important to note that the model must simulate lengths of calls, which is a measurement of time (a real value always greater than 0). The first proposed model is a $\mathrm{Poisson}(\lambda)$ distribution in which $\lambda$ is both the mean and the variance of the distribution, in this case, the mean on the length of the calls. The first proposed distribution is the $\mathrm{Beta}(4, 2)$, corresponding to the first plot. This distribution confines the $\lambda$ between 0 and 1. It is not a realistic behavior as a phone call can have a length greater than 1, so it is not much reliable as prior assumption. The second proposed prior is a normal. A normal is able to return negative values of $\lambda$ that, actually, does not make sense in the context of a time measurement. The only suitable distribution as prior of $\lambda$ is the Gamma one. A gamma returns positive (non zero) samples of $\lambda$, which corresponds exacly with its natural domain.
+
+Posterior can be computed with $\mathsf{stan}$. The first step is to program the model:
+
+```
+data{
+  int N;
+  int y[N];
+  real<lower=0> alpha;
+  real<lower=0> beta;
+}
+parameters{
+  real<lower=0> lambda;
+}
+model{
+  target += poisson_lpmf( y | lambda );
+  target += gamma_lpdf(lambda|alpha, beta);
+}
+```
+with the model ready, posterior can be computed. In order to compute the model, 15 samples have been generated by using a $\mathrm{Poisson}(\lambda=4)$.
+
+```{r}
+#simulate the data
+set.seed(123)
+n <- 15
+true_mean <- 4
+y <- rpois(n,true_mean)
+
+#prior params
+alpha<-4
+beta<-2
+
+#launch stan model
+data<- list(N=n, y=y, alpha=alpha, beta=beta)
+fit2 <- stan(file="./src/gamma_lambda.stan", data = data, chains = 4, iter=2000, refresh=-1);
+
+#extract Stan output
+sim <- extract(fit2)
+sample_lambda <- sim[["lambda"]]
+
+#posterior params
+alpha_star = alpha + length(y)*mean(y)
+beta_star = beta+length(y)
+
+#plot
+par(mfrow=c(1,1), pty ="m", oma=c(0,0,0,0))
+hist(sim[["lambda"]], probability = TRUE, xlim=c(0,7), ylim=c(0,1.0), breaks=15, 
+     col="darkmagenta", border="white",
+     xlab=expression(lambda), ylab="Probability", main="Prior and posterior distribution")
+curve(dgamma(x, 4, 2), col="dodgerblue", lwd=2,
+      cex.lab=2, add=T) 
+curve(dgamma(x, alpha_star, beta_star), col="maroon", lwd=2,
+      cex.lab=2, add=T)
+abline(v=true_mean, col="darkgoldenrod1", lwd=3, lty=1)
+legend(0, 1, c("Posterior", "Th. Posterior", "Prior", expression(paste("True ", lambda))), 
+       c("darkmagenta", "maroon", "dodgerblue", "darkgoldenrod1"), cex=0.8)
+```
+
+In the posterior distribution it is observed a maximum near to the true value of $\lambda$. The particular prior distribution and likelihood used in this simulation permit to compute also analitically the theoretical posterior distribution. As will be shown, the prior is the conjugate of the posterior. In the computation, multiplicative constants will be avoided in order to clarify the explanation. The first step is to write the likelihood and the prior a more friendly way:
+
+$$
+p(\mathbf{y}|\lambda)  =  \prod_{i=1}^N p(y_i|\lambda)  
+              =  \prod_{i=1}^N \frac{e^{-\lambda} \lambda^{y_i}}{y_i!} 
+              \propto e^{-N\lambda}\lambda^{N \bar{y}}; \ \ \ \
+p(\lambda)  =  \frac{\beta^\alpha \lambda^{\alpha-1}  e^{-\beta \lambda}}{\Gamma(\alpha)}
+            \propto  \lambda^{\alpha-1} e^{-\beta \lambda}
+$$
+
+Now both (simplified) expressions are multiplied.
+
+
+$$
+p(\lambda | \mathbf{y}) \ = \ p(\mathbf{y} | \lambda)p(\lambda)
+                        \ \propto \ \lambda^{\alpha-1} e^{-\beta \lambda} e^{-N \lambda} \lambda^{N\bar{y}}
+                         =  \lambda^{\alpha-1+N \bar{y}} e^{-\lambda (\beta + N)}
+$$
+In this formula, constants can be renamed as follows:
+$$
+\begin{align}
+\alpha' &= \alpha + N \bar{y} \\
+\beta' &= \beta + N
+\end{align}
+$$
+The resulting formula then is the next:
+$$
+p(\lambda | \mathbf{y}) \ \propto \ \lambda^{\alpha'-1} e^{-\lambda \beta'} 
+$$
+This expression corresponds to the functional form of a $\mathrm{Gamma}(\alpha', \beta')$ distribution except for a multiplicative constant, which can be also seen as a normalization constant. Since the quantity $p(\lambda | \mathbf{y})$ must be necessarily a probability distribution, the only possible choice for the unknown normalization constant is to be the one of the Gamma distribution, so the complete posterior distribution is the next:
+
+$$
+p(\lambda | \mathbf{y}) = \mathrm{Gamma}(\alpha', \beta'); \ \ \ \ 
+\alpha' = \alpha + N \bar{y}, \ \ \beta' = \beta + N
+$$
+
+Since it is known the analytical expression of the posterior, is easy to check the goodness of the Markov samples with a qqplot:
+
+```{r}
+#qqplot
+n <- 100
+p <- (1:n)/n
+
+q_theor <- qgamma(p = p, alpha_star, beta_star)
+q_empir <- quantile(sample_lambda, probs = p)
+
+par(mfrow=c(1,1), pty ="m", oma=c(0,0,0,0))
+plot(x=q_theor, y=q_empir, type="p", col="black", 
+     main = "Gamma q-q plot", xlab="Theoretical quantiles", ylab="Empirical quantiles")
+segments(x0=0, y0=0, x1=5.5, y1=5.5, col="red") 
+
+```
+
+The Markov process samples fits well in the qqplot, in a similar way as samples of the exercise 5.
 
 ## Exercise 8
 
