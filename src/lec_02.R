@@ -10,8 +10,8 @@ student_score <- readr::read_delim(
 
 # Set hyperparameters
 dataset_rows <- nrow(student_score)
-outer_replicates <- 100  # For estimates of psi C.I.
-inner_replicates <- 100  # For estimate of Var for psi-estimator
+outer_replicates <- 200  # For estimates of psi C.I.
+inner_replicates <- 200  # For estimate of Var for psi-estimator
 
 
 # Define the statistic of interest

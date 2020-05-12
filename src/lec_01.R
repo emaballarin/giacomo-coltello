@@ -68,10 +68,8 @@ boot_studci <- function(data_ci, statistic_ci, ci_bounds, replicates_ci, replica
 
 
 # Main
-boot_studci(
-    data_ci = student_score,
+boot_studci(data_ci = student_score,
     statistic_ci = psi_fun,
     ci_bounds = c(0.975, 0.025),
     replicates_ci = outer_replicates,
-    replicates_ci_inner = inner_replicates
-        )
+    replicates_ci_inner = inner_replicates)

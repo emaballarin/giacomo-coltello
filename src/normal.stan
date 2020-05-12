@@ -1,4 +1,5 @@
-data{
+data
+{
     int N;
     real y[N];
     real<lower=0> sigma;
@@ -6,11 +7,13 @@ data{
     real<lower=0> tau;
 }
 
-parameters{
+parameters
+{
     real theta;
 }
 
-model{
+model
+{
     target+=normal_lpdf(y|theta, sigma);
     target+=normal_lpdf(theta|mu, tau);
 }

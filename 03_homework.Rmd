@@ -5,7 +5,7 @@ date: "13th May 2020"
 output:
   html_document:
     theme: darkly
-    highlight: default
+    highlight: breezedark
     mathjax: default
     self_contained: true
     md_extensions: +autolink_bare_uris

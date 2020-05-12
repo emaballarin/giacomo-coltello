@@ -34,14 +34,14 @@ posterior <- as.array(fit)
 # ACTUAL EXERCISE #
 
 bayesplot::color_scheme_set(scheme = "brightblue")
-bayesplot_theme_update(panel.background = element_rect(fill = "black"))
+bayesplot::bayesplot_theme_update(panel.background = element_rect(fill = "black"))
 
 bayesplot::mcmc_intervals(posterior,
                           pars = c("theta"))
 
-mcmc_areas(posterior,
+bayesplot::mcmc_areas(posterior,
            pars = c("theta"))
 
-mcmc_dens_overlay(posterior, pars = c("theta"),
+bayesplot::mcmc_dens_overlay(posterior, pars = c("theta"),
                   facet_args = list(nrow = 2)) +
-                facet_text(size = 13)
+                bayesplot::facet_text(size = 13)
