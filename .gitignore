@@ -51,3 +51,4 @@ figs/
 # Utilities
 publish.sh
 knit.sh
+clean_garbage.sh
