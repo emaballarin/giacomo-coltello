@@ -352,7 +352,7 @@ Launch the following line of $\mathsf{R}$ code:
 posterior <- as.array(fit)
 ```
 
-Use now the $\mathsf{bayesplot} package. Read the help and produce for this example, using the object posterior, the following plots:
+Use now the $\mathsf{bayesplot}$ package. Read the help and produce for this example, using the object posterior, the following plots:
 
 - posterior intervals;
 - posterior areas;
@@ -593,4 +593,209 @@ From the result of the MCMC sampling we observe that mean and variance results f
 
 ## Exercise 9
 
+### Text:
+
+Reproduce the first plot above for the soccer goals, but this time by replacing Prior 1 with a $\mathsf{Gamma}(2,4)$. Then, compute the final Bayes factor matrix ($\mathsf{BF\_matrix}$) with this new prior and the other ones unchanged, and comment. Is still Prior 2 favorable over all the others?
+
+### Solution:
+
+In this exercise we are interested in assessing the average number of goals scored by a given team in Major league Soccerr, and denote the goals for $n$ games as $y_1,…,y_n$.
+```{r echo=TRUE,  message=FALSE, warning=FALSE}
+library(LearnBayes)
+data(soccergoals)
+
+y <- soccergoals$goals
+```
+So we assume a poisson likelihood. Then we have to elicit a prior for the parameter $\mathsf{\lambda}$, with several plausible choices.\
+We'll use the same code provided by the lab exercitation, but this time we'll change the first prior to compare in a $\mathsf{Gamma}(2,4)$ distribution.
+```{r echo=TRUE,  message=FALSE, warning=FALSE}
+#write the likelihood function via the gamma distribution
+
+lik_pois<- function(data, theta){
+  n <- length(data)
+  lambda <- exp(theta)
+  dgamma(lambda, shape =sum(data)+1, scale=1/n)
+}
+
+prior_gamma <- function(par, theta){
+  lambda <- exp(theta)
+  dgamma(lambda, par[1], rate=par[2])*lambda  
+}
+
+prior_norm <- function(npar, theta){
+  lambda=exp(theta)  
+  (dnorm(theta, npar[1], npar[2]))
+  
+}
+
+lik_pois_v <- Vectorize(lik_pois, "theta")
+prior_gamma_v <- Vectorize(prior_gamma, "theta")
+prior_norm_v <- Vectorize(prior_norm, "theta")
+
+
+#likelihood
+curve(lik_pois_v(theta=x, data=y), xlim=c(-3,4), xlab=expression(theta), ylab = "density", lwd =2 )
+#prior 1
+curve(prior_gamma_v(theta=x, par=c(2, 4)), lty =2, col="red", add = TRUE, lwd =2)
+#prior 2 
+curve(prior_norm_v(theta=x, npar=c(1, .5)), lty =3, col="blue", add =TRUE, lwd=2)
+#prior 3 
+curve(prior_norm_v(theta=x, npar=c(2, .5)), lty =4, col="green", add =TRUE, lwd =2)
+#prior 4 
+curve(prior_norm_v(theta=x, npar=c(1, 2)), lty =5, col="violet", add =TRUE, lwd =2)
+legend(2.6, 1.8, c("Lik.", "Ga(4.57,1.43)", "N(1, 0.25)", "N(2,0.25)","N(1, 4)" ),
+       lty=c(1,2,3,4,5), col=c("black", "red", "blue", "green", "violet"),lwd=2, cex=0.9)
+```
+As we can already see from the plot, the new prior we implemented (red) is 
+
+Now we compute and display BF matrix:
+```{r echo=TRUE,  message=FALSE, warning=FALSE}
+logpoissongamma <- function(theta, datapar){
+  data <- datapar$data
+  par <- datapar$par
+  lambda <- exp(theta)
+  log_lik <- log(lik_pois(data, theta))
+  log_prior <- log(prior_gamma(par, theta))
+  return(log_lik+log_prior)
+}
+
+logpoissonnormal <- function( theta, datapar){
+  data <- datapar$data
+  npar <- datapar$par
+  lambda <- exp(theta)
+  log_lik <- log(lik_pois(data, theta))
+  log_prior <- log(prior_norm(npar, theta))
+  return(log_lik+log_prior)
+}  
+
+datapar <- list(data=y, par=c(2, 4))
+fit1 <- laplace(logpoissongamma, .5, datapar)
+datapar <- list(data=y, par=c(1, .5))
+fit2 <- laplace(logpoissonnormal, .5, datapar)
+datapar <- list(data=y, par=c(2, .5))
+fit3 <- laplace(logpoissonnormal, .5, datapar)
+datapar <- list(data=y, par=c(1, 2))
+fit4 <- laplace(logpoissonnormal, .5, datapar)
+
+logmarg <- c(fit1$int, fit2$int, fit3$int, fit4$int)
+
+BF_matrix <- matrix(1, 4,4)
+for (i in 1:3){
+  for (j in 2:4){
+    BF_matrix[i,j]<- exp(logmarg[i]-logmarg[j])
+    BF_matrix[j,i]=(1/BF_matrix[i,j]) 
+  }
+}
+
+round_bf <- round(BF_matrix,3)
+round_bf
+```
+
 ## Exercise 10
+
+### Text:
+
+Let $y=(1,0,0,1,0,0,0,0,0,1,0,0,1,0)$ collect the results of tossing $n=14$ times an unfair coin, where $1$ denotes $heads$ and $0$ $tails$, and $p=Prob(y_i=1)$.
+
+* Looking at the $\mathsf{Stan}$ code for the other models, write a short $\mathsf{Stan}$ Beta-Binomial model, where $p$ has a $\mathsf{Beta}(a,b)$ prior with $a=3$,$b=3$.
+* extract the posterior distribution with the function $\mathsf{extract}()$;
+* produce some plots with the $\mathsf{bayesplot}$ package and comment.
+* compute analitically the posterior distribution and compare it with the $\mathsf{Stan}$ distribution.
+
+### Solution
+
+First of all we load data,
+```{r echo=TRUE,  message=FALSE, warning=FALSE}
+library(rstan)
+library(bayesplot)
+
+y <- c(1,0,0,1,0,0,0,0,0,1,0,0,1,0)
+n <- 14
+a <- 3
+b <- 3
+```
+the `ex10.stan` file used has the following structure:
+```{stan output.var = 'foo_rob'}
+data{
+  int N;
+  int y[N];
+  real alpha;
+  real beta;
+}
+parameters{
+  real<lower=0,upper=1> p;
+}
+model{
+  target+=bernoulli_lpmf( y | p );
+  target+=beta_lpdf( p | alpha, beta );
+}
+```
+at this point we launch the Stan model:
+```{r echo=TRUE,  message=FALSE, warning=FALSE}
+data<- list(N=n, y=y, alpha=a , beta=b)
+fit <- stan(file="ex10.stan", data = data, chains = 4, iter=2000)
+```
+we extract the posterior distribution:
+```{r echo=TRUE,  message=FALSE, warning=FALSE}
+#extract Stan output
+sim <- extract(fit)
+```
+and with bayesplot we analyse the results of the model.
+```{r echo=TRUE,  message=FALSE, warning=FALSE}
+#traceplot
+traceplot(fit, pars ="p")
+
+
+#MCMC areas
+posterior <- as.matrix(fit)
+
+plot_title <- ggtitle("Posterior distributions",
+                      "with medians and 80% intervals")
+
+mcmc_areas(posterior, 
+           pars = "p", 
+           prob = 0.8) + plot_title
+```
+In the end we compute analytically the posterior distribution
+$$
+\mathsf{\pi}(p|y) \propto \mathsf{L}(p;y)\mathsf{\pi}(p) \\
+\mathsf{\pi}(p|y) \propto \mathsf{Binom}(y;n,p)\mathsf{Beta}(a,b) \\
+\mathsf{\pi}(p|y) \propto p^y(1-p)^{n-y}p^{a-1}(1-p)^{b-1} = p^{y+a-1}(1-p)^{n-y+b-1} \\
+\mathsf{\pi}(p|y) \propto \mathsf{Beta}(a+y,b+n-y)
+$$
+In our specific case we have:
+$$
+\mathsf{\pi}(p|y) \propto \mathsf{Beta}(7,13)
+$$
+Finally we plot and compare the true analytical posterior and the Stan simulated posterior
+```{r echo=TRUE,  message=FALSE, warning=FALSE}
+par(mfrow=c(1,2), pty ="m", oma=c(0,0,0,0))
+
+curve(dbeta(x, 3, 3),xlim=c(-1,2), lty=1, lwd=2, col="red", ylim=c(0,4), 
+      ylab="density", xlab=expression(p), cex.lab=2)
+lines(density(sim$p, adj=2), col ="blue", lwd=2, lty =1)
+legend(0.5, 4, c("Prior", "Stan Posterior"),
+       c("red", "blue" ), lty=c(1,1),lwd=c(1,1), cex=0.5)
+
+
+curve(dbeta(x, 3, 3),xlim=c(-1,2), lty=1, lwd=2, col="red", ylim=c(0,4), 
+      ylab="density", xlab=expression(p), cex.lab=2)
+curve(dbeta(x, 7, 13), 
+      xlab=expression(theta), ylab="", col="blue", lwd=2,
+      cex.lab=2, add=T)  
+legend(0.5, 4, c("Prior", "Analytical Posterior"), 
+       c("red", "blue" ), lty=c(1,1),lwd=c(1,1), cex=0.5)
+```
+and we also compare them in the same plot
+```{r echo=TRUE,  message=FALSE, warning=FALSE}
+par(mfrow=c(1,1), pty ="m", oma=c(0,0,0,0))
+
+
+curve(dbeta(x, 7, 13),xlim=c(-1,2), lty=2, lwd=1, col="black", ylim=c(0,4), 
+      ylab="density", xlab=expression(theta), cex.lab=2)
+curve(dbeta(x, 3, 3 ), xlim=c(-1,2), col="red", lty=1,lwd=2,  add =T)
+lines(density(sim$p, adj=2), col ="blue", lwd=2, lty =1)
+legend(0.5, 4, c("Prior", "Analytical posterior", "Stan Posterior"),
+       c("red", "black", "blue", "blue" ), lty=c(1,2,1),lwd=c(1,1,2), cex=0.8)
+```
+We can barely see the difference between the Stan posterior and the analytical one. 
