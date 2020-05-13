@@ -400,7 +400,14 @@ Quickly comment.
 
 ### Comment:
 
-#FIXME!
+The result from execution of the code snippet above should produce three plots in total, referring to the *posterior* distribution of interest.
+
+- **The first plot**, obtained thanks to the `bayesplot::mcmc_intervals` method shows on the $y$-axis the (string-based) list of parameter names defined as such in a given `stan` model. The $x$-axis represents the overall (union of single parameter spaces) parameter space for the numerical value of such parameters. The plot is *color-* and *symbol-* *coded* by representing with a circular dot the *mode point-estimate* of the parameter, with a thick line containing such point the *0.5 quantile around such estimate* and with the thin line the *0.5 quantile around such estimate*.
+
+- **The second plot**, obtained thanks to the `bayesplot::mcmc_areas` method shows on the $y$-axis the (string-based) list of parameter names defined as such in a given `stan` model, aligned each with a horizontal thin line. Such latter line - one per parameter - serves as the $0$-point for a *p.d.f.* graph - again one per parameter. The $x$-axis represents the overall (union of single parameter spaces) parameter space for the numerical value of such parameters. The plot is *color-* and *symbol-* *coded* by representing with a thick vertical line the *mode point-estimate projection on the parameter axis under the p.d.f. curve*. The semitransparently-colored band around it represents another of such projections for the *0.5 equal-area quantile around the mode-estimate*. Lastly, the thin line represents and encloses the *p.d.f* with bounds approximately coinciding with $1.0$ probability.
+
+- **The third plot**, obtained thanks to the `bayesplot::mcmc_dens_overlay` method shows the *p.d.f.* plot for each of the chains used in the MCMC process. The point-average of each of these chains results in the thin-line distribution of the previous plot. Visual checks can be performed by inspecting such plot in order to visually assess in a preliminary fashion the convergence of the model, especially pertaining to *inter-chain variance*.
+
 
 ## Exercise 7
 
