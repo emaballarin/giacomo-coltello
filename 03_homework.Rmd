@@ -567,17 +567,19 @@ The MCMC samples fit well in the theoretical, in a similar way as samples of the
 
 ### Text:
 
-Go to this link: [rstan](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started), and follow the instructions to download and install the rstan library. Once you did it succesfully, open the file model called biparametric.stan, and replace the line
+Go to this link: [rstan](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started), and follow the instructions to download and install the $\mathsf{rstan}$ library. Once you did it succesfully, open the file model called `biparametric.stan`, and replace the line
 
-$$ \mathsf{ target+=cauchy\_lpdf(sigma| 0, 2.5);} $$ 
-**with the following one:**
+`target+=cauchy\_lpdf(sigma| 0, 2.5);`
 
-$$ \mathsf{ target+=uniform_lpdf(sigma|0.1,10);} $$
+with the following one:
+
+`target+=uniform_lpdf(sigma|0.1,10);`
+
 Which prior are you now assuming for your parameter $\sigma$? Reproduce the same plots as above and briefly comment.
 
 ### Solution:
 
-The `biparametric.stan` file used has the following structure:
+The `biparametric.stan` file used has the following content:
 ```
 data{
   int N;
@@ -595,16 +597,19 @@ model{
   target+=uniform_lpdf(sigma|0.1,10);
 }
 ```
-In this case we're assuming that the parameter $\sigma$ has a prior distribution that is Uniform in the interval $[0.1,10]$
+In this case we're assuming that the parameter $\sigma$ has a prior distribution that is Uniform in the interval $[0.1,10]$.
+
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
-#true mean
+# true mean
 theta_sample <- 2
-#likelihood variance
+
+# likelihood variance
 sigma2 <- 2
-#sample size
+
+# sample size
 n <- 10
 
-#generate some data
+# generate some data
 set.seed(123)
 y <- rnorm(n,theta_sample, sqrt(sigma2))
 ```
@@ -625,22 +630,29 @@ rstan::rstan_options(auto_write = TRUE)
 data3<- list(N=n, y=y, a=-10, b=10)
 fit3 <- rstan::stan(file="./src/biparametric.stan", data = data3, chains = 4, iter=2000,
              refresh=-1)
+
 #extract stan output for biparametric model
 sim3 <- rstan::extract(fit3)
+
 posterior_biv <- as.matrix(fit3)
+
 theta_est <- mean(sim3$theta)
 sigma_est <- mean(sim3$sigma)
+
 #mean of the samples
 c(theta_est, sigma_est)
 ```
 
-Once we have the MCMC samples, we represent the result with `mcmc_areas`: 
+Once we have the MCMC samples, we represent the result with the `bayesplot` function `mcmc_areas`: 
+
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 plot_title <- ggplot2::ggtitle("Posterior distributions", "with medians and 80% intervals")
+
 bayesplot::mcmc_areas(posterior_biv, pars = c("theta","sigma"), prob = 0.8) + plot_title
 ```
 
-From the result of the MCMC sampling we observe that mean and variance results for both $\theta$ and $\sigma$ are slightly different from the case in wich $\sigma \sim \text{Cauchy}^+ (0,2.5)$. This result suggests that priors used don't provide much information to the posterior distributions.
+From such result, we observe that mean and variance for both $\theta$ and $\sigma$ are only slightly different from the case in wich $\sigma \sim \text{Cauchy}^+ (0,2.5)$. This result suggests that the twi different priors used don't provide much information to influence the posterior distributions.
+
 
 ## Exercise 9
 
@@ -650,17 +662,21 @@ Reproduce the first plot above for the soccer goals, but this time by replacing 
 
 ### Solution:
 
-In this exercise we are interested in assessing the average number of goals scored by a given team in Major league Soccerr, and denote the goals for $n$ games as $y_1,…,y_n$.
+In this exercise we are interested in assessing the average number of goals scored by a given team in Major League Soccer, goals we denote $y_1,…,y_n$, for $n$ games overall.
+
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 library(LearnBayes)
 data(soccergoals)
 
 y <- soccergoals$goals
 ```
-So we assume a poisson likelihood. Then we have to elicit a prior for the parameter $\mathsf{\lambda}$, with several plausible choices.\
-We'll use the same code provided by the lab exercitation, but this time we'll change the first prior to compare in a $\mathsf{Gamma}(2,4)$ distribution.
+
+We assume a *Poisson* likelihood, and we have to define a prior for the parameter $\mathsf{\lambda}$, for which we have with several plausible choices.
+
+We use the same code snippet provided in the lab materials, this time changing change the first provided prior to a $\mathsf{Gamma}(2,4)$ distribution.
+
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
-#write the likelihood function via the gamma distribution
+# write the likelihood function via the gamma distribution
 
 lik_pois<- function(data, theta){
   n <- length(data)
@@ -683,20 +699,25 @@ lik_pois_v <- Vectorize(lik_pois, "theta")
 prior_gamma_v <- Vectorize(prior_gamma, "theta")
 prior_norm_v <- Vectorize(prior_norm, "theta")
 
-
 #likelihood
-curve(lik_pois_v(theta=x, data=y), xlim=c(-3,4), xlab=expression(theta), ylab = "log-scale density", lwd =2 )
+curve(lik_pois_v(theta=x, data=y), xlim=c(-3,4), xlab=expression(theta), ylab = "log-scale density", lwd =2)
+
 #prior 1
 curve(prior_gamma_v(theta=x, par=(c(2, 4))), lty =2, col="red", add = TRUE, lwd =2)
+
 #prior 2 
 curve(prior_norm_v(theta=x, npar=c(1, 0.5)), lty =3, col="blue", add =TRUE, lwd=2)
+
 #prior 3 
 curve(prior_norm_v(theta=x, npar=c(2, 0.5)), lty =4, col="green", add =TRUE, lwd =2)
+
 #prior 4 
 curve(prior_norm_v(theta=x, npar=c(1, 2)), lty =5, col="violet", add =TRUE, lwd =2)
+
 legend(2.6, 1.8, c("Lik.", "Ga(4.57,1.43)", "N(1, 0.25)", "N(2,0.25)","N(1, 4)" ),
        lty=c(1,2,3,4,5), col=c("black", "red", "blue", "green", "violet"),lwd=2, cex=0.9)
 ```
+
 As we can already see from this plot in log scale, the new prior we implemented (red) is pretty much extreme as the third prior. Their mean in log scale differ considerably from the likelihood one.  
 
 Now we compute and display BF matrix:
@@ -743,6 +764,7 @@ round_bf
 ```
 From the BF_matrix we notice that Prior 1 is worse than Prior 4 and Prior 2 as we expected, but thanks to the matrix we can better see that Prior 1 is better than Prior 3.
 However Prior 2 is still favored over the other priors. 
+
 ## Exercise 10
 
 ### Text:
