@@ -734,7 +734,7 @@ model{
 at this point we launch the Stan model:
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 data<- list(N=n, y=y, alpha=a , beta=b)
-fit <- rstan::stan(file="ex10.stan", data = data, chains = 4, iter=2000)
+fit <- rstan::stan(file="./src/ex10.stan", data = data, chains = 4, iter=2000)
 ```
 we extract the posterior distribution:
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
