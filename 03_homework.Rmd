@@ -876,8 +876,6 @@ hist(sim$p, col="darkmagenta", border="white" ,probability=T, xlim=c(0,1))
 curve(dbeta(x, 7, 13),xlim=c(-1,2), lty=1, lwd=2, col="orange", ylim=c(0,4), 
       ylab="density", xlab=expression(theta), cex.lab=2, add=T)
 curve(dbeta(x, 3, 3 ), xlim=c(-1,2), col="dodgerblue", lty=1,lwd=2,  add =T)
-legend(-1, 3.5, c("Prior", "Analytical posterior", "Stan Posterior"),
+legend(.6, 3, c("Prior", "Analytical posterior", "Stan Posterior"),
        c("dodgerblue", "orange", "darkmagenta" ), cex=0.8)
 ```
-
-To conclude, we can barely see the difference between the Stan posterior and the analytical one.
