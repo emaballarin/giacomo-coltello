@@ -634,7 +634,7 @@ prior_norm_v <- Vectorize(prior_norm, "theta")
 
 
 #likelihood
-curve(lik_pois_v(theta=x, data=y), xlim=c(-3,4), xlab=expression(theta), ylab = "density", lwd =2 )
+curve(lik_pois_v(theta=x, data=y), xlim=c(-3,4), xlab=expression(theta), ylab = "log-scale density", lwd =2 )
 #prior 1
 curve(prior_gamma_v(theta=x, par=c(2, 4)), lty =2, col="red", add = TRUE, lwd =2)
 #prior 2 
@@ -646,7 +646,7 @@ curve(prior_norm_v(theta=x, npar=c(1, 2)), lty =5, col="violet", add =TRUE, lwd 
 legend(2.6, 1.8, c("Lik.", "Ga(4.57,1.43)", "N(1, 0.25)", "N(2,0.25)","N(1, 4)" ),
        lty=c(1,2,3,4,5), col=c("black", "red", "blue", "green", "violet"),lwd=2, cex=0.9)
 ```
-As we can already see from the plot, the new prior we implemented (red) is 
+As we can already see from this plot in log scale, the new prior we implemented (red) is pretty much extreme as the third prior. Their mean in log scale differ considerably from the likelihood one.  
 
 Now we compute and display BF matrix:
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
@@ -690,7 +690,8 @@ for (i in 1:3){
 round_bf <- round(BF_matrix,3)
 round_bf
 ```
-
+From the BF_matrix we notice that Prior 1 is worse than Prior 4 and Prior 2 as we expected, but thanks to the matrix we can better see that Prior 1 is better than Prior 3.
+However Prior 2 is still favored over the other priors. 
 ## Exercise 10
 
 ### Text:
@@ -715,7 +716,7 @@ a <- 3
 b <- 3
 ```
 the `ex10.stan` file used has the following structure:
-```{stan output.var = 'foo_rob'}
+```{stan output.var = 'foo_lorz'}
 data{
   int N;
   int y[N];
@@ -733,7 +734,7 @@ model{
 at this point we launch the Stan model:
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 data<- list(N=n, y=y, alpha=a , beta=b)
-fit <- stan(file="ex10.stan", data = data, chains = 4, iter=2000)
+fit <- stan(file="./src/ex10.stan", data = data, chains = 4, iter=2000)
 ```
 we extract the posterior distribution:
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
@@ -756,6 +757,8 @@ mcmc_areas(posterior,
            pars = "p", 
            prob = 0.8) + plot_title
 ```
+The first plot gives us a visual representation of the sampling behavior for the four chains we use to produce the stan fit.
+The second plot is the density plot computed from posterior draws with all the chains merged.
 In the end we compute analytically the posterior distribution
 $$
 \mathsf{\pi}(p|y) \propto \mathsf{L}(p;y)\mathsf{\pi}(p) \\
@@ -766,6 +769,11 @@ $$
 In our specific case we have:
 $$
 \mathsf{\pi}(p|y) \propto \mathsf{Beta}(7,13)
+$$
+Which gives us
+$$
+\mathsf{E}[p] = \frac{a}{a+b} = 0.35 \\
+\mathsf{Var}[p] = \frac{ab}{(a+b)^2(a+b+1)} = 0.01
 $$
 Finally we plot and compare the true analytical posterior and the Stan simulated posterior
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
@@ -798,4 +806,4 @@ lines(density(sim$p, adj=2), col ="blue", lwd=2, lty =1)
 legend(0.5, 4, c("Prior", "Analytical posterior", "Stan Posterior"),
        c("red", "black", "blue", "blue" ), lty=c(1,2,1),lwd=c(1,1,2), cex=0.8)
 ```
-We can barely see the difference between the Stan posterior and the analytical one. 
+We can barely see the difference between the Stan posterior and the analytical one.
