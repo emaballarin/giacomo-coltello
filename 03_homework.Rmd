@@ -636,11 +636,11 @@ prior_norm_v <- Vectorize(prior_norm, "theta")
 #likelihood
 curve(lik_pois_v(theta=x, data=y), xlim=c(-3,4), xlab=expression(theta), ylab = "density", lwd =2 )
 #prior 1
-curve(prior_gamma_v(theta=x, par=c(2, 4)), lty =2, col="red", add = TRUE, lwd =2)
+curve(prior_gamma_v(theta=x, par=(c(2, 4))), lty =2, col="red", add = TRUE, lwd =2)
 #prior 2 
-curve(prior_norm_v(theta=x, npar=c(1, .5)), lty =3, col="blue", add =TRUE, lwd=2)
+curve(prior_norm_v(theta=x, npar=c(1, 0.5)), lty =3, col="blue", add =TRUE, lwd=2)
 #prior 3 
-curve(prior_norm_v(theta=x, npar=c(2, .5)), lty =4, col="green", add =TRUE, lwd =2)
+curve(prior_norm_v(theta=x, npar=c(2, 0.5)), lty =4, col="green", add =TRUE, lwd =2)
 #prior 4 
 curve(prior_norm_v(theta=x, npar=c(1, 2)), lty =5, col="violet", add =TRUE, lwd =2)
 legend(2.6, 1.8, c("Lik.", "Ga(4.57,1.43)", "N(1, 0.25)", "N(2,0.25)","N(1, 4)" ),
@@ -733,12 +733,12 @@ model{
 at this point we launch the Stan model:
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 data<- list(N=n, y=y, alpha=a , beta=b)
-fit <- stan(file="ex10.stan", data = data, chains = 4, iter=2000)
+fit <- rstan::stan(file="ex10.stan", data = data, chains = 4, iter=2000)
 ```
 we extract the posterior distribution:
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 #extract Stan output
-sim <- extract(fit)
+sim <- rstan::extract(fit)
 ```
 and with bayesplot we analyse the results of the model.
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
