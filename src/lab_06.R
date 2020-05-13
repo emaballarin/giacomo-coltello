@@ -46,8 +46,8 @@ bayesplot::mcmc_intervals(posterior,
                           pars = c("theta"))
 
 bayesplot::mcmc_areas(posterior,
-           pars = c("theta"))
+           pars = c("theta")) + labs(y="Posterior probability density")
 
 bayesplot::mcmc_dens_overlay(posterior, pars = c("theta"),
                   facet_args = list(nrow = 2)) +
-                bayesplot::facet_text(size = 13)
+                bayesplot::facet_text(size = 13) + labs(y="Posterior probability density")
