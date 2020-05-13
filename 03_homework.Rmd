@@ -191,16 +191,16 @@ plot(function(x) -log_lik_weibull_profile_gamma_v(data=y, x)+weib_mle$value,
 
 
 segments(x0=weib_mle_ci[1], y0=-log_lik_weibull_profile_gamma_v(y,weib_mle_ci[1])+weib_mle$value,
-         x1= weib_mle_ci[1], y1=-10,  col="green", lty=2)
+         x1= weib_mle_ci[1], y1=-10,  col="red", lty=2)
 
-segments(x0=weib_mle_ci[2], y0=-log_lik_weibull_profile_gamma_v(y,weib_mle_ci[2])+weib_mle$value, x1= weib_mle_ci[2], y1=-10,  col="green", lty=2)
+segments(x0=weib_mle_ci[2], y0=-log_lik_weibull_profile_gamma_v(y,weib_mle_ci[2])+weib_mle$value, x1= weib_mle_ci[2], y1=-10,  col="red", lty=2)
 
-abline(v=weib_mle$par[1], col="green", lwd=1, lty=1)
+abline(v=weib_mle$par[1], col="red", lwd=1, lty=1)
 
-text(10, -1, "MLE for Gamma", col="green")
-text(7,-7,"95% Wald CI",col="green")
+text(10, -1, "MLE for Gamma", col="red")
+text(7,-7,"95% Wald CI",col="red")
 
-segments( weib_mle_ci[1], -6.7, weib_mle_ci[2], -6.7, col="green", lty =1, lwd=2  )
+segments( weib_mle_ci[1], -6.7, weib_mle_ci[2], -6.7, col="red", lty =1, lwd=2  )
 ```
 
 ## Exercise 3
@@ -223,10 +223,12 @@ $$\{\beta: \ell_P(\beta) \geq \ell_P(\hat \beta) - \frac{1}{2}\chi^2_{1;1-\alpha
 gamma <- seq(0.1, 15, length=100)
 beta <- seq(100,200, length=100)
 
+#maximum likelihood estimate
 weib_mle<-optim(c(1,1),fn=log_lik_weibull,hessian=T,
                   method='L-BFGS-B',lower=rep(1e-7,2),
                   upper=rep(Inf,2),data=y)
 
+#profile likelihood for a given beta (gamma is numerically estimated in (0,15) interval)
 log_lik_weibull_profile_beta <- function(data, beta) {
   gamma.beta <- uniroot(function(x) n/x - n * log(beta) + sum(log(data)) - sum((data/beta)^x * log(data/beta)), c(1e-5,15))$root
   log_lik_weibull(data, c(gamma.beta, beta))
@@ -235,13 +237,10 @@ log_lik_weibull_profile_beta <- function(data, beta) {
 
 
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
+#vectorization of profile likelihood
 log_lik_weibull_profile_beta_vec <- Vectorize(log_lik_weibull_profile_beta, 'beta')
 
-plot(function(x) -log_lik_weibull_profile_beta_vec(data=y, x) + weib_mle$value, from=120, to=200,
-     xlab = expression(beta),
-     ylab = 'profile relative log likelihood',
-     ylim = c(-10,0))
-
+#confidence intervals
 conf.level<-0.95
 
 lrt.ci1 <- uniroot(function(x) -log_lik_weibull_profile_beta(data = y, x) +
@@ -249,28 +248,27 @@ lrt.ci1 <- uniroot(function(x) -log_lik_weibull_profile_beta(data = y, x) +
                    qchisq(conf.level,1)/2,
                    c(1e-7,weib_mle$par[2]))$root
 
-
 lrt.ci1<-c(lrt.ci1, uniroot(function(x) -log_lik_weibull_profile_beta(y,x) +
                              weib_mle$value +
                              qchisq(conf.level,1)/2,
                              c(weib_mle$par[2],200))$root)
 
+#plot
+plot(function(x) -log_lik_weibull_profile_beta_vec(data=y, x) + weib_mle$value, from=120, to=200,
+     xlab = expression(beta),
+     ylab = 'profile relative log likelihood',
+     ylim = c(-10,0))
 abline(h = -qchisq(conf.level,1)/2, lty='dashed', col=2)
-
 segments(lrt.ci1[1], -qchisq(conf.level,1)/2, lrt.ci1[1], 
           -log_lik_weibull_profile_beta_vec(y, lrt.ci1[1]),
           col="red", lty=2)
-
 segments( lrt.ci1[2],-qchisq(conf.level,1)/2, lrt.ci1[2],
           -log_lik_weibull_profile_beta_vec(y, lrt.ci1[2]), col="red", lty=2)
-
 points(lrt.ci1[1], -qchisq(0.95,1)/2, pch=16, col=2, cex=1.5)
-
 points(lrt.ci1[2], -qchisq(0.95,1)/2, pch=16, col=2, cex=1.5)
 segments( lrt.ci1[1],
           -8.1, lrt.ci1[2],
           -8.1, col="red", lty =1, lwd=2)
-
 text(155,-7.5,"95% Deviance CI",col=2)
 ```
 
@@ -871,40 +869,15 @@ $$
 Finally we plot and compare the true analytical posterior and the Stan simulated posterior:
 
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
-par(mfrow=c(1,2), pty ="m", oma=c(0,0,0,0))
-
-curve(dbeta(x, 3, 3),xlim=c(-1,2), lty=1, lwd=2, col="red", ylim=c(0,4), 
-      ylab="density", xlab=expression(p), cex.lab=2)
-
-lines(density(sim$p, adj=2), col ="blue", lwd=2, lty =1)
-
-legend(0.5, 4, c("Prior", "Stan Posterior"),
-       c("red", "blue" ), lty=c(1,1),lwd=c(1,1), cex=0.5)
-
-
-curve(dbeta(x, 3, 3),xlim=c(-1,2), lty=1, lwd=2, col="red", ylim=c(0,4), 
-      ylab="density", xlab=expression(p), cex.lab=2)
-
-curve(dbeta(x, 7, 13), 
-      xlab=expression(theta), ylab="", col="blue", lwd=2,
-      cex.lab=2, add=T)
-
-legend(0.5, 4, c("Prior", "Analytical Posterior"), 
-       c("red", "blue" ), lty=c(1,1),lwd=c(1,1), cex=0.5)
-```
-
-We can also compare them in the same plot:
-```{r echo=TRUE,  message=FALSE, warning=FALSE}
 par(mfrow=c(1,1), pty ="m", oma=c(0,0,0,0))
 
-curve(dbeta(x, 7, 13),xlim=c(-1,2), lty=2, lwd=1, col="black", ylim=c(0,4), 
-      ylab="density", xlab=expression(theta), cex.lab=2)
 
-curve(dbeta(x, 3, 3 ), xlim=c(-1,2), col="red", lty=1,lwd=2,  add =T)
-lines(density(sim$p, adj=2), col ="blue", lwd=2, lty =1)
-
-legend(0.5, 4, c("Prior", "Analytical posterior", "Stan Posterior"),
-       c("red", "black", "blue", "blue" ), lty=c(1,2,1),lwd=c(1,1,2), cex=0.8)
+hist(sim$p, col="darkmagenta", border="white" ,probability=T, xlim=c(0,1))
+curve(dbeta(x, 7, 13),xlim=c(-1,2), lty=1, lwd=2, col="orange", ylim=c(0,4), 
+      ylab="density", xlab=expression(theta), cex.lab=2, add=T)
+curve(dbeta(x, 3, 3 ), xlim=c(-1,2), col="dodgerblue", lty=1,lwd=2,  add =T)
+legend(-1, 3.5, c("Prior", "Analytical posterior", "Stan Posterior"),
+       c("dodgerblue", "orange", "darkmagenta" ), cex=0.8)
 ```
 
 To conclude, we can barely see the difference between the Stan posterior and the analytical one.
