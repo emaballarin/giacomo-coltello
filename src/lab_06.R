@@ -40,7 +40,7 @@ posterior <- as.array(fit)
 # ACTUAL EXERCISE #
 
 bayesplot::color_scheme_set(scheme = "brightblue")
-bayesplot::bayesplot_theme_update(panel.background = ggplot2::element_rect(fill = "black"))
+#bayesplot::bayesplot_theme_update(panel.background = ggplot2::element_rect(fill = "black"))
 
 bayesplot::mcmc_intervals(posterior,
                           pars = c("theta"))

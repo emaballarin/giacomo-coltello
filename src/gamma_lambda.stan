@@ -1,13 +1,18 @@
-data{
+data
+{
   int N;
   int y[N];
   real<lower=0> alpha;
   real<lower=0> beta;
 }
-parameters{
+
+parameters
+{
   real<lower=0> lambda;
 }
-model{
+
+model
+{
   target += poisson_lpmf( y | lambda );
   target += gamma_lpdf(lambda|alpha, beta);
 }

@@ -124,7 +124,8 @@ weib_mle_ci
 log_lik_weibull_profile_gamma_v <-Vectorize(log_lik_weibull_profile_gamma, 'gamma'  )
 plot(function(x) -log_lik_weibull_profile_gamma_v(data=y, x)+weib_mle$value,
      from=0.1,to=15,xlab=expression(gamma),
-     ylab='profile relative log likelihood',ylim=c(-8,0))
+     ylab='profile relative log likelihood',
+     ylim=c(-8,0))
 
 
 segments(x0=weib_mle_ci[1], y0=-log_lik_weibull_profile_gamma_v(y,weib_mle_ci[1])+weib_mle$value,
@@ -170,8 +171,10 @@ log_lik_weibull_profile_beta <- function(data, beta) {
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 log_lik_weibull_profile_beta_vec <-Vectorize(log_lik_weibull_profile_beta, 'beta')
 
-plot(function(x) -log_lik_weibull_profile_beta_vec(data=y, x) + weib_mle$value, from=120,to=200, xlab=expression(beta),
-    ylab='profile relative log likelihood', ylim=c(-10,0))
+plot(function(x) -log_lik_weibull_profile_beta_vec(data=y, x) + weib_mle$value, from=120,to=200,
+     xlab=expression(beta),
+     ylab='profile relative log likelihood',
+     ylim=c(-10,0))
 
 conf.level<-0.95
 lrt.ci1<-uniroot(function(x) -log_lik_weibull_profile_beta(data = y, x)+
@@ -212,6 +215,12 @@ In this model, as said in the lab, the analytical form of the posterior distribu
 #EXERCISE 5
 library(rstan)
 
+# Make Stan go parallel!
+options(mc.cores = parallel::detectCores())
+
+# Avoid losing precious time
+rstan::rstan_options(auto_write = TRUE)
+
 #true mean
 theta_sample <- 2
 #likelihood variance
@@ -234,10 +243,10 @@ sd_star <- sqrt(1/( (1/tau2)+(n/sigma2)))
 
 #launch Stan model
 data<- list(N=n, y=y, sigma =sqrt(sigma2), mu = mu, tau = sqrt(tau2))
-fit <- stan(file="./src/normal.stan", data = data, chains = 4, iter=2000);  ##<- ¡¡¡ CAMBIARE file="normal.stan" !!!
+fit <- rstan::stan(file="./src/normal.stan", data = data, chains = 4, iter=2000);
 
 #extract Stan output
-sim <- extract(fit);
+sim <- rstan::extract(fit);
 sample_theta <- sim[["theta"]]
 emp_q <- quantile(sample_theta, probs = c(0.25, 0.5, 0.75))
 th_q <- qnorm(p = c(0.25, 0.5, 0.75), mu_star, sd_star)
@@ -269,8 +278,13 @@ q_theor <- qnorm(p = p, mu_star, sd_star)
 q_empir <- quantile(sample_theta, probs = p)
 
 par(mfrow=c(1,1), pty ="m", oma=c(0,0,0,0))
-plot(x=q_theor, y=q_empir, type="p", col="black", 
-     main = "Normal q-q plot", xlab="Theoretical quantiles", ylab="Empirical quantiles")
+plot(x=q_theor,
+     y=q_empir,
+     type="p",
+     col="black", 
+     main = "Normal q-q plot",
+     xlab="Theoretical quantiles",
+     ylab="Empirical quantiles")
 segments(x0=0, y0=0, x1=5, y1=5, col="red") 
 ```
 
@@ -332,7 +346,7 @@ It is important to note that the model must simulate lengths of calls, which is 
 
 Posterior can be computed with $\mathsf{stan}$. The first step is to program the model:
 
-```
+```{stan output.var = 'foo_jose'}
 data{
   int N;
   int y[N];
@@ -362,10 +376,10 @@ beta<-2
 
 #launch stan model
 data<- list(N=n, y=y, alpha=alpha, beta=beta)
-fit2 <- stan(file="./src/gamma_lambda.stan", data = data, chains = 4, iter=2000, refresh=-1);
+fit2 <- rstan::stan(file="./src/gamma_lambda.stan", data = data, chains = 4, iter=2000, refresh=-1);
 
 #extract Stan output
-sim <- extract(fit2)
+sim <- rstan::extract(fit2)
 sample_lambda <- sim[["lambda"]]
 
 #posterior params
@@ -433,8 +447,13 @@ q_theor <- qgamma(p = p, alpha_star, beta_star)
 q_empir <- quantile(sample_lambda, probs = p)
 
 par(mfrow=c(1,1), pty ="m", oma=c(0,0,0,0))
-plot(x=q_theor, y=q_empir, type="p", col="black", 
-     main = "Gamma q-q plot", xlab="Theoretical quantiles", ylab="Empirical quantiles")
+plot(x=q_theor,
+     y=q_empir,
+     type="p",
+     col="black", 
+     main = "Gamma q-q plot",
+     xlab="Theoretical quantiles",
+     ylab="Empirical quantiles")
 segments(x0=0, y0=0, x1=5.5, y1=5.5, col="red") 
 
 ```
