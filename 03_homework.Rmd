@@ -11,7 +11,7 @@ output:
     md_extensions: +autolink_bare_uris
     toc: true
     toc_collapsed: false
-    toc_float: true
+    toc_float: false
     toc_depth: 3
     number_sections: false
 header-includes:
@@ -776,9 +776,9 @@ Let $y=(1,\ 0,\ 0,\ 1,\ 0,\ 0,\ 0,\ 0,\ 0,\ 1,\ 0,\ 0,\ 1,\ 0)$ collect the resu
 * produce some plots with the $\mathsf{bayesplot}$ package and comment.
 * compute analitically the posterior distribution and compare it with the $\mathsf{Stan}$ distribution.
 
-### Solution
+### Solution:
 
-First of all we load data,
+First of all we load packages and define the data:
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 library(rstan)
 library(ggplot2)
@@ -789,33 +789,44 @@ n <- 14
 a <- 3
 b <- 3
 ```
-the `ex10.stan` file used has the following structure:
+The file used (`ex10.stan`) has the following content:
 ```
-data{
+data
+{
   int N;
   int y[N];
   real alpha;
   real beta;
 }
-parameters{
+
+parameters
+{
   real<lower=0,upper=1> p;
 }
-model{
+
+model
+{
   target+=bernoulli_lpmf( y | p );
   target+=beta_lpdf( p | alpha, beta );
 }
 ```
-at this point we launch the Stan model:
+
+At this point we fit the Stan model:
+
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 data<- list(N=n, y=y, alpha=a , beta=b)
 fit <- rstan::stan(file="./src/ex10.stan", data = data, chains = 4, iter=2000)
 ```
-we extract the posterior distribution:
+
+We extract the posterior distribution:
+
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 #extract Stan output
 sim <- rstan::extract(fit)
 ```
-and with bayesplot we analyse the results of the model.
+
+And with $\mathsf{bayesplot}$ we analyse the results of the model:
+
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 # traceplot
 traceplot(fit, pars ="p")
@@ -831,9 +842,10 @@ bayesplot::mcmc_areas(posterior,
            pars = "p", 
            prob = 0.8) + plot_title
 ```
-The first plot gives us a visual representation of the sampling behavior for the four chains we use to produce the stan fit.
-The second plot is the density plot computed from posterior draws with all the chains merged.
-In the end we compute analytically the posterior distribution
+
+The first plot gives us a visual representation of the sampling behavior for the four Markov chains we use to produce the stan fit. The second plot is the *density plot* computed from posterior draws with all the chains merged.
+
+We also compute analytically the posterior distribution
 $$
 \mathsf{\pi}(p|y) \propto \mathsf{L}(p;y)\mathsf{\pi}(p) \\
 \mathsf{\pi}(p|y) \propto \mathsf{Binom}(y;n,p)\mathsf{Beta}(a,b) \\
@@ -849,35 +861,43 @@ $$
 \mathsf{E}[p] = \frac{a}{a+b} = 0.35 \\
 \mathsf{Var}[p] = \frac{ab}{(a+b)^2(a+b+1)} = 0.01
 $$
-Finally we plot and compare the true analytical posterior and the Stan simulated posterior
+Finally we plot and compare the true analytical posterior and the Stan simulated posterior:
+
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 par(mfrow=c(1,2), pty ="m", oma=c(0,0,0,0))
 
 curve(dbeta(x, 3, 3),xlim=c(-1,2), lty=1, lwd=2, col="red", ylim=c(0,4), 
       ylab="density", xlab=expression(p), cex.lab=2)
+
 lines(density(sim$p, adj=2), col ="blue", lwd=2, lty =1)
+
 legend(0.5, 4, c("Prior", "Stan Posterior"),
        c("red", "blue" ), lty=c(1,1),lwd=c(1,1), cex=0.5)
 
 
 curve(dbeta(x, 3, 3),xlim=c(-1,2), lty=1, lwd=2, col="red", ylim=c(0,4), 
       ylab="density", xlab=expression(p), cex.lab=2)
+
 curve(dbeta(x, 7, 13), 
       xlab=expression(theta), ylab="", col="blue", lwd=2,
-      cex.lab=2, add=T)  
+      cex.lab=2, add=T)
+
 legend(0.5, 4, c("Prior", "Analytical Posterior"), 
        c("red", "blue" ), lty=c(1,1),lwd=c(1,1), cex=0.5)
 ```
-and we also compare them in the same plot
+
+We can also compare them in the same plot:
 ```{r echo=TRUE,  message=FALSE, warning=FALSE}
 par(mfrow=c(1,1), pty ="m", oma=c(0,0,0,0))
 
-
 curve(dbeta(x, 7, 13),xlim=c(-1,2), lty=2, lwd=1, col="black", ylim=c(0,4), 
       ylab="density", xlab=expression(theta), cex.lab=2)
+
 curve(dbeta(x, 3, 3 ), xlim=c(-1,2), col="red", lty=1,lwd=2,  add =T)
 lines(density(sim$p, adj=2), col ="blue", lwd=2, lty =1)
+
 legend(0.5, 4, c("Prior", "Analytical posterior", "Stan Posterior"),
        c("red", "black", "blue", "blue" ), lty=c(1,2,1),lwd=c(1,1,2), cex=0.8)
 ```
-We can barely see the difference between the Stan posterior and the analytical one.
+
+To conclude, we can barely see the difference between the Stan posterior and the analytical one.
